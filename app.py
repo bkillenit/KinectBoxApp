@@ -10,9 +10,11 @@ mixer_device = doc.tracks[0].mixer_device
 return_tracks = doc.return_tracks
 tracks = doc.tracks
 
+stream.initializeAbletonData(doc.tempo, mixer_device.sends[0].value, mixer_device.sends[1].value, mixer_device.sends[2].value, return_tracks, tracks[0], tracks[1], doc.current_song_time)
+
 tempo_callback = lambda: stream.tempoChange(doc.tempo, doc.current_song_time)
 effect_callback = lambda: stream.effectChange(mixer_device.sends[0].value, mixer_device.sends[1].value, mixer_device.sends[2].value, return_tracks, doc.current_song_time)
-track_callback = lambda: stream.trackChange(tracks[0], tracks[1])
+track_callback = lambda: stream.trackChange(tracks[0], tracks[1], doc.current_song_time)
 
 # adding all of the listeners for Ableton
 for send in mixer_device.sends:
