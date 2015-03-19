@@ -1,0 +1,1 @@
+socketIo-client==0.6.1
