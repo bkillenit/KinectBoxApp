@@ -104,7 +104,7 @@ def musicChange(isPlaying, song_time):
 	global songDic
 	global musicState
 
-	if isPlaying and (isPlaying != musicState):
+	if isPlaying and not musicState:
 		emitData(abletonDic, songDic, song_time)
 		musicState = True
 	else:
