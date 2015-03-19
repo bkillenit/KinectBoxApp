@@ -4,9 +4,7 @@ import json
 socketUrl = 'cc.kywu.org'
 socketIO = SocketIO(socketUrl, 8000, LoggingNamespace)
 
-effect1IsOn = False
-effect2IsOn = False
-effect3IsOn = False
+effectsOn = []
 abletonDic = {'effectsOn': [], 'effectsLoaded': [], 'tempo': 0, 'song_time': 0}
 songDic = {'titles': [], 'song_time':0}
 # crowdDic = dict()
@@ -17,32 +15,24 @@ def emitAbletonData(abletonDic):
 	global socketIO
 
 	print "emmiting ableton data"
+	print abletonDic
 	socketIO.emit("ableton", json.dumps(abletonDic))
 
 def emitSongData(songDic):
 	global socketIO
 
 	print "emitting song data"
+	print songDic
 	socketIO.emit("song", json.dumps(songDic))
 
 # function that gets the current state of Ableton upon program launch and saves the state in our program's variables accordingly
-def initializeAbletonData( currTempo, effect1, effect2, effect3, return_tracks, track1, track2, song_time, isPlaying):
-	global effect1IsOn
-	global effect2IsOn
-	global effect3IsOn
-
+def initializeAbletonData( currTempo, effects, return_tracks, track1, track2, song_time, isPlaying):
 	global abletonDic
 	global songDic
 	global tempo
 
-	if effect1 >= .5:
-		effect1IsOn = True
-	if effect2 >= .5:
-		effect2IsOn = True
-	if effect3 >= .5:
-		effect3IsOn = True
-	
-	updateEffects(return_tracks, song_time)
+	updateEffectsActive(effects)
+	updateAbletonEffectsDic(return_tracks, song_time)
 
 	if track1.playing_slot_index > -1:
 		track1Clip =  track1.clip_slots[track1.playing_slot_index].clip.name
@@ -72,60 +62,51 @@ def tempoChange(currTempo, song_time):
 		abletonDic['song_time'] = song_time
 		emitAbletonData(abletonDic)
 
-def trackChange(track1, track2, song_time):
+def trackChange(tracks, song_time):
 	global songDic
 
 	songDic['titles'] = []
 	songDic['song_time'] = song_time
 
-	if track1.playing_slot_index > -1:
-		track1Clip =  track1.clip_slots[track1.playing_slot_index].clip.name
-		songDic['titles'].append(track1Clip)
-
-	if track2.playing_slot_index > -1:
-		track2Clip = track2.clip_slots[track2.playing_slot_index].clip.name
-		songDic['titles'].append(track2Clip)
+	for track in tracks:
+		if track.playing_slot_index > -1:
+			trackClip =  track.clip_slots[track.playing_slot_index].clip.name
+			songDic['titles'].append(trackClip)
 
 	emitSongData(songDic)
 
-def updateEffects(return_tracks, song_time):
+def updateAbletonEffectsDic(return_tracks, song_time):
 	global abletonDic
-	global effect1IsOn
-	global effect2IsOn
-	global effect3IsOn
+	global effectsOn
 
 	abletonDic['song_time'] = song_time
 	abletonDic['effectsOn'] = []
 
-	if effect1IsOn:
-		abletonDic['effectsOn'].append(return_tracks[0].name)
+	for idx in range(0, len(effectsOn)):
+		if effectsOn[idx]:
+			abletonDic['effectsOn'].append(return_tracks[idx].name)
 
-	if effect2IsOn:
-		abletonDic['effectsOn'].append(return_tracks[1].name)
-
-	if effect3IsOn:
-		abletonDic['effectsOn'].append(return_tracks[2].name)
-
-def effectChange(effect1, effect2, effect3, return_tracks, song_time):
-	global effect1IsOn
-	global effect2IsOn
-	global effect3IsOn
+def updateEffectsActive(effects):
+	global effectsOn
 	effectChange = False
-	
-	if (effect1IsOn and effect1 < .5) or ((not effect1IsOn) and effect1 >= .5):
-		effect1IsOn = not effect1IsOn
-		effectChange = True
 
-	if (effect2IsOn and effect2 < .5) or ((not effect2IsOn) and effect2 >= .5):
-		effect2IsOn = not effect2IsOn
-		effectChange = True
+	for idx in range(0, len(effects)):
+		if(idx >= len(effectsOn)):
+			effectsOn.append(False)
 
-	if (effect3IsOn and effect3 < .5) or ((not effect3IsOn) and effect3 >= .5):
-		effect3IsOn = not effect3IsOn
-		effectChange = True
+		if (effectsOn[idx] and effects[idx].value < .5) or (not effectsOn[idx] and effects[idx].value >= .5):
+			effectsOn[idx] = not effectsOn[idx]
+			if not effectChange:
+				effectChange = True
+
+	return effectChange
+
+def effectChange(effects, return_tracks, song_time):
+	global effectsOn
+	effectChange = updateEffectsActive(effects)
 
 	if effectChange:
-		updateEffects(return_tracks, song_time)
+		updateAbletonEffectsDic(return_tracks, song_time)
 		emitAbletonData(abletonDic)
 
 def musicChange(isPlaying):
