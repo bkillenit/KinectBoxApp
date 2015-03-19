@@ -1,34 +1,32 @@
 from socketIO_client import SocketIO, LoggingNamespace
 import json
 
-url = 'placeholder'
-
-with SocketIO(url, 8000, LoggingNamespace) as socketIO:
-    socketIO.emit('aaa')
-    socketIO.wait(seconds=1)
+socketUrl = 'cc.kywu.org'
+socketIO = SocketIO(socketUrl, 8000, LoggingNamespace)
 
 effect1IsOn = False
 effect2IsOn = False
 effect3IsOn = False
-abletonDic = {'effects': [], 'tempo': 0, 'song_time': 0}
+abletonDic = {'effectsOn': [], 'effectsLoaded': [], 'tempo': 0, 'song_time': 0}
 songDic = {'titles': [], 'song_time':0}
-
 # crowdDic = dict()
 tempo = 0
 
 # emit data to our web app via the socket
 def emitAbletonData(abletonDic):
 	global socketIO
-	socketIO.emit(json.dumps(abletonDic))
+
+	print "emmiting ableton data"
+	socketIO.emit("ableton", json.dumps(abletonDic))
 
 def emitSongData(songDic):
 	global socketIO
-	socketIO.emit(json.dumps(songDic))
 
-
+	print "emitting song data"
+	socketIO.emit("song", json.dumps(songDic))
 
 # function that gets the current state of Ableton upon program launch and saves the state in our program's variables accordingly
-def initializeAbletonData( currTempo, effect1, effect2, effect3, return_tracks, track1, track2, song_time):
+def initializeAbletonData( currTempo, effect1, effect2, effect3, return_tracks, track1, track2, song_time, isPlaying):
 	global effect1IsOn
 	global effect2IsOn
 	global effect3IsOn
@@ -57,12 +55,12 @@ def initializeAbletonData( currTempo, effect1, effect2, effect3, return_tracks, 
 	tempo = currTempo
 	abletonDic['tempo'] = currTempo
 	abletonDic['song_time'] = song_time
+	songDic['song_time'] = song_time
 
-	emitAbletonData(abletonDic)
-	emitSongData(songDic)
+	for effect in return_tracks:
+		abletonDic['effectsLoaded'].append(effect.name)
 
-def streamSetData( abletonDic, crowdDic, time, song_time):
-	print 'something has changed'
+	musicChange(isPlaying)
 
 def tempoChange(currTempo, song_time):
 	global tempo
@@ -73,8 +71,6 @@ def tempoChange(currTempo, song_time):
 		abletonDic['tempo'] = tempo
 		abletonDic['song_time'] = song_time
 		emitAbletonData(abletonDic)
-		print abletonDic
-		print song_time
 
 def trackChange(track1, track2, song_time):
 	global songDic
@@ -90,8 +86,6 @@ def trackChange(track1, track2, song_time):
 		track2Clip = track2.clip_slots[track2.playing_slot_index].clip.name
 		songDic['titles'].append(track2Clip)
 
-	print songDic
-	print song_time
 	emitSongData(songDic)
 
 def updateEffects(return_tracks, song_time):
@@ -101,16 +95,16 @@ def updateEffects(return_tracks, song_time):
 	global effect3IsOn
 
 	abletonDic['song_time'] = song_time
-	abletonDic['effects'] = []
+	abletonDic['effectsOn'] = []
 
 	if effect1IsOn:
-		abletonDic['effects'].append(return_tracks[0].name)
+		abletonDic['effectsOn'].append(return_tracks[0].name)
 
 	if effect2IsOn:
-		abletonDic['effects'].append(return_tracks[1].name)
+		abletonDic['effectsOn'].append(return_tracks[1].name)
 
 	if effect3IsOn:
-		abletonDic['effects'].append(return_tracks[2].name)
+		abletonDic['effectsOn'].append(return_tracks[2].name)
 
 def effectChange(effect1, effect2, effect3, return_tracks, song_time):
 	global effect1IsOn
@@ -133,5 +127,16 @@ def effectChange(effect1, effect2, effect3, return_tracks, song_time):
 	if effectChange:
 		updateEffects(return_tracks, song_time)
 		emitAbletonData(abletonDic)
-		print abletonDic
-		print song_time
+
+def musicChange(isPlaying):
+	global abletonDic
+	global songDic
+
+	if isPlaying:
+		emitAbletonData(abletonDic)
+		emitSongData(songDic)
+		print 'set is playing'
+	else:
+		emitAbletonData( {'effectsOn': [], 'effectsLoaded': [], 'tempo': 0, 'song_time': 0} )
+		emitSongData( {'titles': [], 'song_time':0} )
+		print 'set is stopped'
