@@ -89,9 +89,6 @@ def updateEffects(return_tracks, song_time):
 	if effect3IsOn:
 		abletonDic['effects'].append(return_tracks[2].name)
 
-	print abletonDic
-	print song_time
-
 def effectChange(effect1, effect2, effect3, return_tracks, song_time):
 	global effect1IsOn
 	global effect2IsOn
@@ -112,3 +109,5 @@ def effectChange(effect1, effect2, effect3, return_tracks, song_time):
 
 	if effectChange:
 		updateEffects(return_tracks, song_time)
+		print abletonDic
+		print song_time
