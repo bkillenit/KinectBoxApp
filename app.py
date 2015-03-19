@@ -38,4 +38,3 @@ finally:
 	for track in tracks:
 		track.remove_playing_slot_index_listener(track_callback)
 	doc.remove_is_playing_listener(music_callback)
-	s.close()
