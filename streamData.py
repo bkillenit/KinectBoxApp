@@ -1,5 +1,6 @@
 from socketIO_client import SocketIO, LoggingNamespace
 import json
+import ast
 
 socketUrl = 'cc.kywu.org'
 socketIO = SocketIO(socketUrl, 8000, LoggingNamespace)
@@ -10,6 +11,8 @@ songDic = {'titles': []}
 # crowdDic = dict()
 tempo = 0
 musicState = False
+
+crowdIntensityNumber = 0
 
 # emit data to our web app via the socket
 def emitData(abletonDic, songDic, song_time):
@@ -110,3 +113,10 @@ def musicChange(isPlaying, song_time):
 	else:
 		emitData({}, {}, song_time)
 		musicState = False
+
+def crowdDataChange(data):
+	crowdData = ast.literal_eval(data)
+
+	# if crowdData['initAvg']:
+	# 	crowdIntensityNumber = crowdData['initAvg']
+	print crowdData

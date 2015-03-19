@@ -1,31 +1,37 @@
 import rpyc
-# import ableton
+import streamData
 import socket
 import sys
 
-# --- socket copy ---
-HOST = ''   # Symbolic name, meaning all available interfaces
-PORT = 8888 # Arbitrary non-privileged port
- 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-print 'Socket created'
- 
-#Bind socket to local host and port
-try:
-    s.bind((HOST, PORT))
-except socket.error as msg:
-    print 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
-    sys.exit()
-     
-print 'Socket bind complete'
+# -- socket copy start --
+HOST = None               # Symbolic name meaning all available interfaces
+PORT = 50007              # Arbitrary non-privileged port
+s = None
+for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC,
+                              socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
+    af, socktype, proto, canonname, sa = res
+    try:
+        s = socket.socket(af, socktype, proto)
+    except socket.error as msg:
+        s = None
+        continue
+    try:
+        s.bind(sa)
+        s.listen(1)
+        print 'socket listening'
+    except socket.error as msg:
+        s.close()
+        s = None
+        continue
+    break
+if s is None:
+    print 'could not open socket'
+    sys.exit(1)
 
-#Start listening on socket
-s.listen(10)
-print 'Socket now listening'
-# --- end socket copy ---
+# -- end socket copy
 
 # initializing python objects to traverse down object tree and find us useful objects
-c = rpyc.connect('localhost', 17744)
+# c = rpyc.connect('localhost', 17744)
 # abletonApp = c.root.Live.Application.get_application()
 # doc = abletonApp.get_document()
 
@@ -33,12 +39,12 @@ c = rpyc.connect('localhost', 17744)
 # return_tracks = doc.return_tracks
 # tracks = doc.tracks
 
-# ableton.initializeAbletonData(doc.tempo, mixer_device.sends, return_tracks, tracks, doc.current_song_time, doc.is_playing)
+# streamData.initializeAbletonData(doc.tempo, mixer_device.sends, return_tracks, tracks, doc.current_song_time, doc.is_playing)
 
-# tempo_callback = lambda: ableton.tempoChange(doc.tempo, doc.current_song_time)
-# effect_callback = lambda: ableton.effectChange(mixer_device.sends, return_tracks, doc.current_song_time)
-# track_callback = lambda: ableton.trackChange(tracks, doc.current_song_time)
-# music_callback = lambda: ableton.musicChange(doc.is_playing, doc.current_song_time)
+# tempo_callback = lambda: streamData.tempoChange(doc.tempo, doc.current_song_time)
+# effect_callback = lambda: streamData.effectChange(mixer_device.sends, return_tracks, doc.current_song_time)
+# track_callback = lambda: streamData.trackChange(tracks, doc.current_song_time)
+# music_callback = lambda: streamData.musicChange(doc.is_playing, doc.current_song_time)
 
 # # adding all of the listeners for Ableton
 # for send in mixer_device.sends:
@@ -50,10 +56,11 @@ c = rpyc.connect('localhost', 17744)
 
 try:
 	while True:
-		c.poll_all()
+		# c.poll_all()
 		conn, addr = s.accept()
-    	if conn:
-    		print 'Connected with ' + addr[0] + ':' + str(addr[1])
+		print 'Connected by', addr
+		data = conn.recv(1024)
+		if data: streamData.crowdDataChange(data)
 finally:
 	# removing all of the listeners after an error occurs or the kill signal is called in the terminal
 	print "\nlisteners unbinding"
