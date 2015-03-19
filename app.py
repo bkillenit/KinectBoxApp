@@ -1,5 +1,28 @@
 import rpyc
 import ableton
+import socket
+import sys
+
+# --- socket copy ---
+HOST = ''   # Symbolic name, meaning all available interfaces
+PORT = 8888 # Arbitrary non-privileged port
+ 
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+print 'Socket created'
+ 
+#Bind socket to local host and port
+try:
+    s.bind((HOST, PORT))
+except socket.error as msg:
+    print 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
+    sys.exit()
+     
+print 'Socket bind complete'
+ 
+#Start listening on socket
+s.listen(10)
+print 'Socket now listening'
+# --- end socket copy ---
 
 # initializing python objects to traverse down object tree and find us useful objects
 c = rpyc.connect('localhost', 17744)
@@ -28,6 +51,9 @@ doc.add_is_playing_listener(music_callback)
 try:
 	while True:
 		c.poll_all()
+		conn, addr = s.accept()
+    	if conn:
+    		print 'Connected with ' + addr[0] + ':' + str(addr[1])
 finally:
 	# removing all of the listeners after an error occurs or the kill signal is called in the terminal
 	print "\nlisteners unbinding"
