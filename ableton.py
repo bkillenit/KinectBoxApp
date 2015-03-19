@@ -9,6 +9,7 @@ abletonDic = {'effectsOn': [], 'effectsLoaded': [], 'tempo': 0}
 songDic = {'titles': []}
 # crowdDic = dict()
 tempo = 0
+musicState = False
 
 # emit data to our web app via the socket
 def emitData(abletonDic, songDic, song_time):
@@ -22,8 +23,8 @@ def initializeAbletonData( currTempo, effects, return_tracks, tracks, song_time,
 	global tempo
 	global songTime
 
-	updateEffectsActive(effects)
-	updateAbletonEffectsDic(return_tracks, song_time)
+	if updateEffectsActive(effects):
+		updateAbletonEffectsDic(return_tracks, song_time)
 
 	for track in tracks:
 		if track.playing_slot_index > -1:
@@ -49,7 +50,10 @@ def tempoChange(currTempo, song_time):
 		emitAbletonData(abletonDic)
 
 def trackChange(tracks, song_time):
+	global abletonDic
 	global songDic
+
+	print 'tracks playing'
 
 	songDic['titles'] = []
 
@@ -58,7 +62,7 @@ def trackChange(tracks, song_time):
 			trackClip =  track.clip_slots[track.playing_slot_index].clip.name
 			songDic['titles'].append(trackClip)
 
-	emitData(song_time)
+	emitData(abletonDic, songDic, song_time)
 
 def updateAbletonEffectsDic(return_tracks, song_time):
 	global abletonDic
@@ -87,17 +91,22 @@ def updateEffectsActive(effects):
 
 def effectChange(effects, return_tracks, song_time):
 	global effectsOn
+	global abletonDic
+	global songDic
 	effectChange = updateEffectsActive(effects)
 
 	if effectChange:
 		updateAbletonEffectsDic(return_tracks)
-		emitData(song_Time)
+		emitData(abletonDic, songDic, song_Time)
 
 def musicChange(isPlaying, song_time):
 	global abletonDic
 	global songDic
+	global musicState
 
-	if isPlaying:
+	if isPlaying and (isPlaying != musicState):
 		emitData(abletonDic, songDic, song_time)
+		musicState = True
 	else:
 		emitData({}, {}, song_time)
+		musicState = False
