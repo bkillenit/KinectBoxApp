@@ -1,8 +1,6 @@
 import rpyc
 import streamData
 import socket
-import sys
-
 
 # initializing python objects to traverse down object tree and find us useful objects
 c = rpyc.connect('localhost', 17744)

@@ -17,7 +17,6 @@ crowdIntensityNumber = 0
 # emit data to our web app via the socket
 def emitData(abletonDic, songDic, song_time):
 	global socketIO
-	print 'emitting data'
 	socketIO.emit("update", json.dumps({'ableton': abletonDic, 'song': songDic, 'song_time': song_time}))
 
 # function that gets the current state of Ableton upon program launch and saves the state in our program's variables accordingly
