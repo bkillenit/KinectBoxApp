@@ -17,6 +17,7 @@ crowdIntensityNumber = 0
 # emit data to our web app via the socket
 def emitData(abletonDic, songDic, song_time):
 	global socketIO
+	print 'emitting data'
 	socketIO.emit("update", json.dumps({'ableton': abletonDic, 'song': songDic, 'song_time': song_time}))
 
 # function that gets the current state of Ableton upon program launch and saves the state in our program's variables accordingly
@@ -27,7 +28,7 @@ def initializeAbletonData( currTempo, effects, return_tracks, tracks, song_time,
 	global songTime
 
 	if updateEffectsActive(effects):
-		updateAbletonEffectsDic(return_tracks, song_time)
+		updateAbletonEffectsDic(return_tracks)
 
 	for track in tracks:
 		if track.playing_slot_index > -1:
@@ -45,18 +46,17 @@ def initializeAbletonData( currTempo, effects, return_tracks, tracks, song_time,
 def tempoChange(currTempo, song_time):
 	global tempo
 	global abletonDic
+	global songDic
 
 	if abs(currTempo - tempo) >= 5:
 		tempo = currTempo
 		abletonDic['tempo'] = tempo
 		abletonDic['song_time'] = song_time
-		emitAbletonData(abletonDic)
+		emitData(abletonDic, songDic, song_time)
 
 def trackChange(tracks, song_time):
 	global abletonDic
 	global songDic
-
-	print 'tracks playing'
 
 	songDic['titles'] = []
 
@@ -67,7 +67,7 @@ def trackChange(tracks, song_time):
 
 	emitData(abletonDic, songDic, song_time)
 
-def updateAbletonEffectsDic(return_tracks, song_time):
+def updateAbletonEffectsDic(return_tracks):
 	global abletonDic
 	global effectsOn
 
@@ -96,11 +96,12 @@ def effectChange(effects, return_tracks, song_time):
 	global effectsOn
 	global abletonDic
 	global songDic
+
 	effectChange = updateEffectsActive(effects)
 
 	if effectChange:
 		updateAbletonEffectsDic(return_tracks)
-		emitData(abletonDic, songDic, song_Time)
+		emitData(abletonDic, songDic, song_time)
 
 def musicChange(isPlaying, song_time):
 	global abletonDic
@@ -113,10 +114,3 @@ def musicChange(isPlaying, song_time):
 	else:
 		emitData({}, {}, song_time)
 		musicState = False
-
-def crowdDataChange(data):
-	crowdData = ast.literal_eval(data)
-
-	# if crowdData['initAvg']:
-	# 	crowdIntensityNumber = crowdData['initAvg']
-	print crowdData
